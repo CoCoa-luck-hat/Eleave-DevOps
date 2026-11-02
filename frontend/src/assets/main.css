@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* 1. กำหนด Custom Colors สำหรับ Tailwind v4 */
+@theme {
+  --font-kanit: 'Kanit', sans-serif;
+  --color-brand-teal: #5CE1CA;
+  --color-brand-navy: #042E49;
+  --color-role-user: #5CE1CA;
+  --color-role-manager: #A855F7;
+  --color-role-admin: #3B82F6;
+}
+/* 2. ปรับแต่งสีพื้นฐานของ DaisyUI v5 ให้เข้ากับธีมระบบ */
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  --color-primary: #5CE1CA;
+  --color-primary-content: #042E49;
+  --color-secondary: #042E49;
+  --color-secondary-content: #ffffff;
+  --color-accent: #5CE1CA;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8fafc;
+  --color-base-300: #f1f5f9;
+  --color-base-content: #1e293b;
+}
+/* 3. บังคับใช้ฟอนต์ Kanit ทั้งระบบ และตั้งค่าสีพื้นหลัง */
+* {
+  font-family: 'Kanit', sans-serif;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+}
