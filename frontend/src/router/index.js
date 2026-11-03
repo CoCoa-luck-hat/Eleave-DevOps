@@ -14,7 +14,6 @@ import ManagerDashboardView from '@/views/manager/ManagerDashboardView.vue'
 // Admin Views (Phase 3)
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import AdminLeaveTypesView from '@/views/admin/AdminLeaveTypesView.vue'
-import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -80,12 +79,6 @@ const routes = [
         name: 'admin-leave-types',
         component: AdminLeaveTypesView,
         meta: { requiresAuth: true, role: 'admin', title: 'จัดการประเภทการลา' },
-      },
-      {
-        path: 'admin/users',
-        name: 'admin-users',
-        component: AdminUsersView,
-        meta: { requiresAuth: true, role: 'admin', title: 'จัดการผู้ใช้' },
       },
     ],
   },

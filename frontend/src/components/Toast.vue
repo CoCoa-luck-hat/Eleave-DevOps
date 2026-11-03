@@ -37,7 +37,7 @@ const alertIcon = (type) => {
         :class="alertClass(toast.type)"
       >
         <i :class="alertIcon(toast.type)" class="text-xl"></i>
-        <span class="test-sm font-medium flex-1">{{ toast.message }}</span>
+        <span class="text-sm font-medium flex-1 leading-snug">{{ toast.message }}</span>
         <button
           @click="toastStore.remove(toast.id)"
           class="btn btn-ghost btn-xs btn-circle opacity-75 hover:opacity-100"

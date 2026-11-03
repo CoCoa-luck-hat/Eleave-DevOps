@@ -51,16 +51,6 @@
           </li>
           <li>
             <button
-              @click="$emit('open-profile')"
-              class="flex items-center gap-2 py-2.5 text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl"
-            >
-              <i class="mdi mdi-account-cog text-lg text-teal-600"></i>
-              <span>แก้ไขโปรไฟล์</span>
-            </button>
-          </li>
-          <div class="divider my-1"></div>
-          <li>
-            <button
               @click="handleLogout"
               class="flex items-center gap-2 py-2.5 text-error hover:bg-red-50 rounded-xl"
             >
@@ -87,7 +77,7 @@ const props = defineProps({
   },
 })
 
-defineEmits(['toggle-sidebar', 'open-profile'])
+defineEmits(['toggle-sidebar'])
 
 const authStore = useAuthStore()
 const toastStore = useToastStore()

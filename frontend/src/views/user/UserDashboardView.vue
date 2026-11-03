@@ -150,6 +150,13 @@
                   </button>
                   <button
                     v-if="leave.status === 'pending'"
+                    @click="openEditModal(leave)"
+                    class="btn btn-ghost btn-xs rounded-lg text-amber-600 hover:bg-amber-50"
+                  >
+                    แก้ไข
+                  </button>
+                  <button
+                    v-if="leave.status === 'pending'"
                     @click="confirmDelete(leave)"
                     class="btn btn-ghost btn-xs rounded-lg text-error hover:bg-red-50"
                   >
@@ -211,6 +218,13 @@
               class="btn btn-ghost btn-xs rounded-lg text-teal-600 hover:bg-teal-50"
             >
               <i class="mdi mdi-eye"></i> ดูรายละเอียด
+            </button>
+            <button
+              v-if="leave.status === 'pending'"
+              @click="openEditModal(leave)"
+              class="btn btn-ghost btn-xs rounded-lg text-amber-600 hover:bg-amber-50"
+            >
+              <i class="mdi mdi-pencil"></i> แก้ไข
             </button>
             <button
               v-if="leave.status === 'pending'"
@@ -338,18 +352,176 @@
       </div>
       <div class="modal-backdrop bg-slate-900/40" @click="deleteDialog = false"></div>
     </div>
+
+    <!-- Edit Modal -->
+    <div v-if="editDialog" class="modal modal-open z-50">
+      <div class="modal-box bg-white rounded-3xl p-6 sm:p-8 max-w-lg shadow-2xl relative">
+        <button
+          @click="editDialog = false"
+          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          :disabled="editLoading"
+        >
+          ✕
+        </button>
+
+        <h3 class="text-xl font-bold text-slate-800 mb-5 flex items-center gap-2">
+          <i class="mdi mdi-file-document-edit text-teal-600 text-2xl"></i>
+          แก้ไขใบลา
+        </h3>
+
+        <form @submit.prevent="handleUpdateLeave" class="space-y-4">
+          <!-- Leave Type -->
+          <div class="form-control w-full">
+            <label class="label py-1">
+              <span class="label-text font-medium text-slate-700"
+                >ประเภทการลา <span class="text-error">*</span></span
+              >
+            </label>
+            <select
+              v-model="editForm.leave_type_id"
+              class="select select-bordered w-full rounded-2xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-sm"
+              :class="{ 'select-error': editErrors.leave_type_id }"
+            >
+              <option value="" disabled>เลือกประเภทการลา</option>
+              <option
+                v-for="item in leaveTypes"
+                :key="item.leave_type_id"
+                :value="item.leave_type_id"
+              >
+                {{ item.leave_type_name }}
+              </option>
+            </select>
+            <span v-if="editErrors.leave_type_id" class="text-error text-xs mt-1">{{
+              editErrors.leave_type_id
+            }}</span>
+          </div>
+
+          <!-- Dates Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="form-control w-full">
+              <label class="label py-1">
+                <span class="label-text font-medium text-slate-700"
+                  >วันที่เริ่มต้น <span class="text-error">*</span></span
+                >
+              </label>
+              <input
+                v-model="editForm.leave_at"
+                type="date"
+                class="input input-bordered w-full rounded-2xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-sm"
+                :class="{ 'input-error': editErrors.leave_at }"
+                @change="calculateEditDays"
+              />
+              <span v-if="editErrors.leave_at" class="text-error text-xs mt-1">{{
+                editErrors.leave_at
+              }}</span>
+            </div>
+
+            <div class="form-control w-full">
+              <label class="label py-1">
+                <span class="label-text font-medium text-slate-700"
+                  >วันที่สิ้นสุด <span class="text-error">*</span></span
+                >
+              </label>
+              <input
+                v-model="editForm.leave_end"
+                type="date"
+                class="input input-bordered w-full rounded-2xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-sm"
+                :class="{ 'input-error': editErrors.leave_end }"
+                @change="calculateEditDays"
+              />
+              <span v-if="editErrors.leave_end" class="text-error text-xs mt-1">{{
+                editErrors.leave_end
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Days preview -->
+          <div
+            class="bg-teal-50/60 border border-teal-100 rounded-2xl p-3 flex justify-between items-center text-sm"
+          >
+            <span class="text-slate-600 font-medium">จำนวนวันลา:</span>
+            <span class="font-bold text-teal-700">{{ editForm.leave_days }} วัน</span>
+          </div>
+
+          <!-- Reason -->
+          <div class="form-control w-full">
+            <label class="label py-1">
+              <span class="label-text font-medium text-slate-700">เหตุผลการลา</span>
+            </label>
+            <textarea
+              v-model="editForm.reason"
+              rows="3"
+              placeholder="ระบุเหตุผลในการขอลา"
+              class="textarea textarea-bordered w-full rounded-2xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all text-sm"
+            ></textarea>
+          </div>
+
+          <!-- Attachment -->
+          <div class="form-control w-full">
+            <label class="label py-1">
+              <span class="label-text font-medium text-slate-700">เอกสารแนบหลักฐาน</span>
+            </label>
+            <div
+              v-if="selectedLeave?.file_report"
+              class="text-xs text-slate-500 mb-2 flex items-center gap-1.5"
+            >
+              <span>ไฟล์ปัจจุบัน:</span>
+              <a
+                :href="getFileUrl(selectedLeave.file_report)"
+                target="_blank"
+                class="text-teal-600 underline font-semibold flex items-center gap-0.5"
+              >
+                <i class="mdi mdi-paperclip"></i> ดูไฟล์เดิม
+              </a>
+            </div>
+            <input
+              type="file"
+              accept=".pdf, image/png, image/jpeg, image/jpg"
+              class="file-input file-input-bordered file-input-sm w-full rounded-xl text-xs"
+              @change="handleEditFileChange"
+            />
+            <span class="text-[11px] text-slate-400 mt-1"
+              >แนบไฟล์ใหม่หากต้องการแทนที่ไฟล์เดิม (PDF, PNG, JPG ขนาดไม่เกิน 10MB)</span
+            >
+          </div>
+
+          <!-- Actions -->
+          <div class="modal-action pt-3 flex gap-2">
+            <button
+              type="button"
+              class="btn btn-ghost rounded-xl flex-1 text-slate-600"
+              @click="editDialog = false"
+              :disabled="editLoading"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              class="btn bg-brand-teal hover:bg-teal-400 text-brand-navy border-none rounded-xl px-6 flex-1 font-bold shadow-md shadow-teal-500/20"
+              :disabled="editLoading"
+            >
+              <span v-if="editLoading" class="loading loading-spinner loading-xs"></span>
+              บันทึกการแก้ไข
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-backdrop bg-slate-900/40" @click="editDialog = false"></div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useLeaveStore } from '@/stores/leave'
+import { useLeaveTypeStore } from '@/stores/leaveType'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { getImageUrl } from '@/utils/imageUrl'
 import AppPagination from '@/components/AppPagination.vue'
 
 const leaveStore = useLeaveStore()
+const leaveTypeStore = useLeaveTypeStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 
@@ -360,6 +532,19 @@ const selectedLeave = ref(null)
 const detailDialog = ref(false)
 const deleteDialog = ref(false)
 const deleteLoading = ref(false)
+
+const editDialog = ref(false)
+const editLoading = ref(false)
+const leaveTypes = ref([])
+const editForm = ref({
+  leave_type_id: '',
+  leave_at: '',
+  leave_end: '',
+  leave_days: 1,
+  reason: '',
+})
+const editFile = ref(null)
+const editErrors = ref({})
 
 const currentPage = ref(1)
 const itemsPerPage = ref(5)
@@ -442,6 +627,92 @@ const confirmDelete = (item) => {
   deleteDialog.value = true
 }
 
+const toDateInputString = (dateVal) => {
+  if (!dateVal) return ''
+  const d = new Date(dateVal)
+  if (isNaN(d.getTime())) return ''
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const openEditModal = (leave) => {
+  selectedLeave.value = leave
+  editForm.value = {
+    leave_type_id: leave.leave_type_id || '',
+    leave_at: toDateInputString(leave.leave_at),
+    leave_end: toDateInputString(leave.leave_end),
+    leave_days: leave.leave_days || 1,
+    reason: leave.reason || '',
+  }
+  editFile.value = null
+  editErrors.value = {}
+  editDialog.value = true
+}
+
+const calculateEditDays = () => {
+  if (editForm.value.leave_at && editForm.value.leave_end) {
+    const start = new Date(editForm.value.leave_at)
+    const end = new Date(editForm.value.leave_end)
+    const diffTime = end.getTime() - start.getTime()
+    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1)
+    editForm.value.leave_days = diffDays
+  }
+}
+
+const handleEditFileChange = (e) => {
+  const file = e.target.files?.[0]
+  if (file) {
+    editFile.value = file
+  }
+}
+
+const handleUpdateLeave = async () => {
+  editErrors.value = {}
+  if (!editForm.value.leave_type_id) {
+    editErrors.value.leave_type_id = 'กรุณาเลือกประเภทการลา'
+  }
+  if (!editForm.value.leave_at) {
+    editErrors.value.leave_at = 'กรุณาเลือกวันที่เริ่มต้น'
+  }
+  if (!editForm.value.leave_end) {
+    editErrors.value.leave_end = 'กรุณาเลือกวันที่สิ้นสุด'
+  }
+  if (editForm.value.leave_at && editForm.value.leave_end) {
+    if (new Date(editForm.value.leave_end) < new Date(editForm.value.leave_at)) {
+      editErrors.value.leave_end = 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่มต้น'
+    }
+  }
+  if (Object.keys(editErrors.value).length > 0) {
+    return
+  }
+
+  editLoading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('leave_type_id', editForm.value.leave_type_id)
+    formData.append('leave_at', editForm.value.leave_at)
+    formData.append('leave_end', editForm.value.leave_end)
+    formData.append('leave_days', editForm.value.leave_days)
+    if (editForm.value.reason) {
+      formData.append('reason', editForm.value.reason)
+    }
+    if (editFile.value) {
+      formData.append('file_report', editFile.value)
+    }
+
+    await leaveStore.updateLeave(selectedLeave.value.report_id, formData)
+    toastStore.add('แก้ไขใบลาสำเร็จ', 'success')
+    editDialog.value = false
+    await loadUserLeaves()
+  } catch (error) {
+    toastStore.add(error.response?.data?.message || 'เกิดข้อผิดพลาดในการแก้ไขใบลา', 'error')
+  } finally {
+    editLoading.value = false
+  }
+}
+
 const deleteLeave = async () => {
   if (!selectedLeave.value) return
   deleteLoading.value = true
@@ -474,7 +745,13 @@ const loadUserLeaves = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadUserLeaves()
+  try {
+    await leaveTypeStore.fetchLeaveTypes()
+    leaveTypes.value = leaveTypeStore.leaveTypes || []
+  } catch (error) {
+    console.error(error)
+  }
 })
 </script>

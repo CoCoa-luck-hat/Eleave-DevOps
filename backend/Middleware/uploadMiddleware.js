@@ -35,23 +35,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Middleware สำหรับอัพโหลดรูปโปรไฟล์
-const uploadProfile = multer({
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb(new Error('รูปโปรไฟล์ต้องเป็นประเภท JPEG หรือ PNG เท่านั้น'));
-        }
-    }
-}).single('profile');
-
 // Middleware สำหรับอัพโหลดเอกสารใบลา
 const uploadReport = multer({
     storage: storage,
@@ -59,4 +42,4 @@ const uploadReport = multer({
     fileFilter: fileFilter
 }).single('file_report');
 
-module.exports = { uploadProfile, uploadReport };
+module.exports = { uploadReport };

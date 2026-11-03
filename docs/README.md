@@ -15,6 +15,7 @@
 | 3 | **ผังงานกระบวนการของผู้ใช้งานระดับ 1** | User Level 1 Flow (พนักงานทั่วไป / Employee), การสร้างใบลา, ติดตามสถานะ, ยกเลิกคำขอ | [3-user-level-1-flow.md](file:///c:/Users/KUY/Desktop/Vecskill/LeaveSystem/docs/3-user-level-1-flow.md) |
 | 4 | **ผังงานกระบวนการของผู้ใช้งานระดับ 2** | User Level 2 Flow (ผู้จัดการฝ่าย / Manager), การตรวจสอบใบลา, การอนุมัติ, การปฏิเสธพร้อมระบุเหตุผล | [4-user-level-2-flow.md](file:///c:/Users/KUY/Desktop/Vecskill/LeaveSystem/docs/4-user-level-2-flow.md) |
 | 5 | **ผังภาพรวมของระบบทั้งหมด** | System Overview Use Case Diagram, ความสัมพันธ์ Actors กับ Use Cases, `<<include>>`, `<<extend>>` | [5-usecase-diagram.md](file:///c:/Users/KUY/Desktop/Vecskill/LeaveSystem/docs/5-usecase-diagram.md) |
+| 6 | **เอกสารการออกแบบ RESTful API** | API Specifications, Method, Parameters (Query, Path, Body, File), Status Codes, JWT Security | [API_DOCUMENTATION.md](file:///c:/Users/KUY/Desktop/Vecskill/LeaveSystem/docs/API_DOCUMENTATION.md) |
 
 ---
 

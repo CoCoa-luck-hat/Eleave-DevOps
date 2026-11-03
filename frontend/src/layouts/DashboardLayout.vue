@@ -9,7 +9,6 @@
       <AppNavbar
         :role="currentRole"
         @toggle-sidebar="sidebarOpen = !sidebarOpen"
-        @open-profile="profileModalOpen = true"
       />
 
       <!-- Page Content -->
@@ -21,9 +20,6 @@
         </router-view>
       </main>
     </div>
-
-    <!-- Reusable Profile Edit Modal -->
-    <ProfileModal v-model="profileModalOpen" />
   </div>
 </template>
 
@@ -33,13 +29,11 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppNavbar from '@/components/AppNavbar.vue'
-import ProfileModal from '@/components/ProfileModal.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 
 const sidebarOpen = ref(false)
-const profileModalOpen = ref(false)
 
 const currentRole = computed(() => {
   const r = (route.meta?.role || authStore.role || 'user').toLowerCase()

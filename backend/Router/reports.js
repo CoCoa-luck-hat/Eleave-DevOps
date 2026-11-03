@@ -5,16 +5,44 @@ const { allowOnlyManager } = require("../Controllers/Role");
 const { VerifyToken } = require("../Middleware/VerifyToken");
 const { uploadReport } = require("../Middleware/uploadMiddleware");
 
-// api ดึงรายงานลาทั้งหมด (Manager/Admin)
+/**
+ * @method  GET
+ * @route   /api/reports
+ * @desc    ดึงรายงานใบลาทั้งหมด พร้อมรองรับการกรองตามสถานะและการค้นหา
+ * @access  Private (Manager หรือ Admin เท่านั้น)
+ * @header  Authorization: Bearer <JWT_TOKEN>
+ * @query   {String} [status] - กรองตามสถานะการลา เช่น ?status=pending หรือ ?status=approved
+ * @query   {String} [search] - ค้นหาตามชื่อผู้ยื่น, อีเมล หรือเหตุผลการลา เช่น ?search=สมชาย
+ * @return  200 OK: { reports: [...] }
+ * @return  401 Unauthorized: { message: "ไม่มี Token" | "Token หมดอายุ" }
+ * @return  403 Forbidden: { message: "เฉพาะผู้จัดการและแอดมินเท่านั้น" }
+ */
 router.get("/reports", VerifyToken, allowOnlyManager, async (req, res) => {
   try {
-    const [row] = await pool.execute(`
+    const { status, search } = req.query;
+    let query = `
       SELECT r.*, u.fullname, u.email, lt.leave_type_name 
       FROM reports r
       LEFT JOIN users u ON r.user_id = u.user_id
       LEFT JOIN leave_types lt ON r.leave_type_id = lt.leave_type_id
-      ORDER BY r.created_at DESC
-    `);
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (status && ["pending", "approved", "rejected"].includes(status)) {
+      query += ` AND r.status = ?`;
+      params.push(status);
+    }
+
+    if (search && search.trim() !== "") {
+      query += ` AND (u.fullname LIKE ? OR u.email LIKE ? OR r.reason LIKE ?)`;
+      const searchPattern = `%${search.trim()}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    query += ` ORDER BY r.created_at DESC`;
+
+    const [row] = await pool.execute(query, params);
     return res.status(200).json({
       reports: row,
     });
@@ -289,7 +317,20 @@ router.delete("/reports/:id", VerifyToken, async (req, res) => {
   }
 });
 
-// api อนุมัติ/ปฏิเสธใบลา (Manager/Admin only)
+/**
+ * @method  PUT
+ * @route   /api/reports/:id/status
+ * @desc    อัปเดตสถานะการอนุมัติหรือปฏิเสธใบลา (Approver Action)
+ * @access  Private (Manager หรือ Admin เท่านั้น)
+ * @header  Authorization: Bearer <JWT_TOKEN>
+ * @param   {Number} id - รหัสใบลา (report_id) ส่งผ่าน Path Parameter
+ * @body    {String} status        - สถานะใหม่ ('approved' | 'rejected') (จำเป็น)
+ * @body    {String} [reject_reason]- เหตุผลที่ปฏิเสธ (จำเป็นกรณี status = 'rejected')
+ * @return  200 OK: { message: "อนุมัติใบลาสำเร็จ" | "ปฏิเสธใบลาสำเร็จ" }
+ * @return  400 Bad Request: { message: "สถานะไม่ถูกต้อง" | "กรุณาระบุเหตุผลในการปฏิเสธ" }
+ * @return  403 Forbidden: { message: "เฉพาะผู้จัดการและแอดมินเท่านั้น" }
+ * @return  404 Not Found: { message: "ไม่พบข้อมูลใบลา" }
+ */
 router.put(
   "/reports/:id/status",
   VerifyToken,

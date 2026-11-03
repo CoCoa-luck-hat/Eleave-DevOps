@@ -23,10 +23,11 @@ const { value: password } = useField('password')
 const handleRegister = handleSubmit(async (value) => {
   try {
     const res = await authStore.register(value)
-    toastStore.add(res.data.message)
+    toastStore.add(res.data.message || 'สมัครสมาชิกสำเร็จ', 'success')
     router.push('/login')
   } catch (error) {
-    toastStore.add(error.response?.data?.message)
+    // Error Handling แสดงแจ้งเตือน Toast สีแดงผ่าน Axios Interceptor อัตโนมัติแล้ว
+    console.error('Register error:', error)
   }
 })
 </script>
@@ -96,7 +97,7 @@ const handleRegister = handleSubmit(async (value) => {
         type="submit"
         class="btn bg-brand-teal hover:bg-teal-400 text-brand-navy border-none w-full rounded-2xl text-base font-bold shadow-md shadow-teal-500/20 mt-4 h4"
       >
-        <span>เข้าสู่ระบบ</span>
+        <span>สมัครสมาชิก</span>
       </button>
     </form>
 

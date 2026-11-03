@@ -31,16 +31,20 @@ flowchart TD
     ClickDetail --> ShowDetailModal["แสดงข้อมูล: ช่วงเวลาลา, จำนวนวัน, เอกสารแนบ<br/>และเหตุผลการปฏิเสธ (กรณีถูกปฏิเสธ)"]
     ShowDetailModal --> CloseModal["ปิดหน้าต่างรายละเอียด"] --> UserDashboard
 
-    %% เส้นทาง 3: การยกเลิก/ลบคำขอลา
+    %% เส้นทาง 3: การแก้ไขคำขอลา
+    MainAction -- "แก้ไขคำขอลา" --> CheckEditStatus{"ตรวจสอบสถานะ<br/>ของคำขอลา"}
+    CheckEditStatus -- "สถานะ = รออนุมัติ (Pending)" --> OpenEditModal["เปิดหน้าต่างแก้ไขใบลา (Edit Modal)<br/>ปรับปรุงประเภทลา, วันที่, เหตุผล, ไฟล์แนบ"]
+    OpenEditModal --> SaveEditLeave["บันทึกการแก้ไขคำขอลาสำเร็จ"] --> UserDashboard
+    CheckEditStatus -- "สถานะ = อนุมัติแล้ว / ปฏิเสธ" --> CannotEdit["ระบบล็อกข้อมูล ไม่อนุญาตให้แก้ไข"] --> UserDashboard
+
+    %% เส้นทาง 4: การยกเลิก/ลบคำขอลา
     MainAction -- "ยกเลิกคำขอลา" --> CheckLeaveStatus{"ตรวจสอบสถานะ<br/>ของคำขอลา"}
     CheckLeaveStatus -- "สถานะ = รออนุมัติ (Pending)" --> ConfirmDelete{"ผู้ใช้ยืนยันการยกเลิกคำขอ?"}
     ConfirmDelete -- "ยืนยัน" --> DeletePendingLeave["ระบบลบคำขอลาออกจากระบบสำเร็จ"] --> UserDashboard
     ConfirmDelete -- "ยกเลิก" --> UserDashboard
-    CheckLeaveStatus -- "สถานะ = อนุมัติแล้ว / ปฏิเสธ" --> CannotDelete["ระบบล็อกข้อมูล ไม่อนุญาตให้ลบหรือแก้ไข"] --> UserDashboard
+    CheckLeaveStatus -- "สถานะ = อนุมัติแล้ว / ปฏิเสธ" --> CannotDelete["ระบบล็อกข้อมูล ไม่อนุญาตให้ลบ"] --> UserDashboard
 
-    %% เส้นทาง 4: จัดการโปรไฟล์ และ ออกจากระบบ
-    MainAction -- "จัดการโปรไฟล์ส่วนตัว" --> ProfileModal["เปิดหน้าต่างโปรไฟล์: แก้ไขชื่อ, เปลี่ยนรหัสผ่าน หรืออัปโหลดรูปภาพ"]
-    ProfileModal --> UpdateProfile["บันทึกข้อมูลส่วนตัว"] --> UserDashboard
+    %% เส้นทาง 5: ออกจากระบบ
     MainAction -- "ออกจากระบบ" --> Logout["ล้างข้อมูลเซสชัน (Token) และกลับสู่หน้า Login"]
     Logout --> End(["สิ้นสุดกระบวนการ"])
 
@@ -53,10 +57,10 @@ flowchart TD
 
     class Start,End startEnd;
     class UserDashboard,CreatePage mainNode;
-    class MainAction,HasFile,ValidateForm,CheckLeaveStatus,ConfirmDelete decision;
-    class FillForm,UploadFile,SubmitLeave,ViewHistory,FilterSearch,ClickDetail,ShowDetailModal,CloseModal,DeletePendingLeave,ProfileModal,UpdateProfile,Logout,BackToDashboard actionNode;
+    class MainAction,HasFile,ValidateForm,CheckEditStatus,CheckLeaveStatus,ConfirmDelete decision;
+    class FillForm,UploadFile,SubmitLeave,ViewHistory,FilterSearch,ClickDetail,ShowDetailModal,CloseModal,OpenEditModal,SaveEditLeave,DeletePendingLeave,Logout,BackToDashboard actionNode;
     class SaveLeaveSuccess successNode;
-    class ShowFormError,CannotDelete errorNode;
+    class ShowFormError,CannotEdit,CannotDelete errorNode;
 ```
 
 ---
@@ -76,6 +80,9 @@ flowchart TD
   - 🟡 **รออนุมัติ (Pending)**: อยู่ระหว่างรอหัวหน้างานตรวจสอบ
   - 🟢 **อนุมัติแล้ว (Approved)**: ได้รับการอนุมัติเรียบร้อยแล้ว
   - 🔴 **ปฏิเสธ (Rejected)**: ไม่ได้รับการอนุมัติ โดยพนักงานสามารถกดดู "รายละเอียด" เพื่ออ่านเหตุผลที่หัวหน้างานระบุได้
+- **เงื่อนไขการแก้ไขคำขอลา**:
+  - สามารถแก้ไขได้ **เฉพาะในกรณีที่สถานะยังเป็น "รออนุมัติ (Pending)" เท่านั้น** ผ่านหน้าต่าง Edit Modal บนหน้าประวัติการลา
+  - รองรับการปรับเปลี่ยนประเภทการลา, ช่วงวันที่, เหตุผล และอัปโหลดไฟล์หลักฐานใหม่แทนที่ไฟล์เดิมได้
 - **เงื่อนไขการยกเลิก/ลบคำขอลา**:
   - สามารถลบคำขอได้ **เฉพาะในกรณีที่สถานะยังเป็น "รออนุมัติ (Pending)" เท่านั้น**
   - หากได้รับการอนุมัติหรือปฏิเสธแล้ว ระบบจะไม่อนุญาตให้แก้ไขหรือลบ เพื่อรักษาความถูกต้องของประวัติการลา

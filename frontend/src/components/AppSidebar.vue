@@ -98,7 +98,6 @@ const allMenus = {
       title: 'จัดการประเภทการลา',
       icon: 'mdi mdi-format-list-bulleted-type',
     },
-    { path: '/admin/users', title: 'จัดการผู้ใช้', icon: 'mdi mdi-account-multiple' },
   ],
   manager: [{ path: '/manager', title: 'พิจารณาอนุมัติใบลา', icon: 'mdi mdi-clipboard-check' }],
   user: [

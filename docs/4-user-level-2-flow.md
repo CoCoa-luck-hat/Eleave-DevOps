@@ -40,8 +40,7 @@ flowchart TD
     ValidateReason -- "ระบุเหตุผลครบถ้วน" --> ProcessReject["ระบบบันทึกเหตุผลการปฏิเสธ (Reject Reason)<br/>และปรับปรุงสถานะเป็น 'ปฏิเสธ (Rejected)'"]
     ProcessReject --> SuccessReject["แสดงข้อความ 'ปฏิเสธใบลาสำเร็จ'<br/>และอัปเดตหน้าจอทันที"] --> ManagerDashboard
 
-    %% การจัดการส่วนตัวและออกจากระบบ
-    DashboardActions -- "จัดการโปรไฟล์ส่วนตัว" --> ProfileModal["เปิดหน้าต่างจัดการข้อมูลส่วนตัว / เปลี่ยนรหัสผ่าน / รูปโปรไฟล์"] --> ManagerDashboard
+    %% การออกจากระบบ
     DashboardActions -- "ออกจากระบบ" --> Logout["ล้างข้อมูลเซสชัน (Token) และกลับสู่หน้า Login"]
     Logout --> End(["สิ้นสุดกระบวนการ"])
 
@@ -56,7 +55,7 @@ flowchart TD
     class Start,End startEnd;
     class ManagerDashboard mainNode;
     class DashboardActions,CheckAttachment,CheckStatus,DecideAction,ConfirmApprove,ValidateReason decision;
-    class BrowseRequests,FilterSearch,SelectRequest,ViewDetail,InspectFile,ViewOnly,OpenRejectModal,InputRejectReason,ProfileModal,Logout actionNode;
+    class BrowseRequests,FilterSearch,SelectRequest,ViewDetail,InspectFile,ViewOnly,OpenRejectModal,InputRejectReason,Logout actionNode;
     class ProcessApprove,SuccessApprove approveNode;
     class ProcessReject,SuccessReject rejectNode;
     class ShowReasonWarning warningNode;

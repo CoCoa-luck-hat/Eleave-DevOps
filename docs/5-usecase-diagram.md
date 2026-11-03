@@ -24,7 +24,6 @@ flowchart LR
         subgraph GroupAuth ["1. ระบบยืนยันตัวตนและการเข้าใช้งาน"]
             UC_Login(["เข้าสู่ระบบ<br/>(Login)"])
             UC_VerifyRole(["ตรวจสอบความถูกต้องและแยกสิทธิ์<br/>(Verify Credentials & RBAC)"])
-            UC_Profile(["จัดการโปรไฟล์และรูปภาพประจำตัว<br/>(Manage Profile)"])
             UC_Logout(["ออกจากระบบ<br/>(Logout)"])
         end
         
@@ -33,6 +32,7 @@ flowchart LR
             UC_CreateLeave(["ยื่นคำขอลาใหม่<br/>(Submit Leave Request)"])
             UC_UploadDoc(["แนบเอกสารหลักฐานประกอบ<br/>(Attach Supporting Doc)"])
             UC_ViewHistory(["ตรวจสอบประวัติและสถานะการลา<br/>(View Leave History)"])
+            UC_EditLeave(["แก้ไขคำขอลาที่รอการอนุมัติ<br/>(Edit Pending Leave)"])
             UC_CancelLeave(["ยกเลิกคำขอลาที่รอการอนุมัติ<br/>(Cancel Pending Leave)"])
         end
 
@@ -48,7 +48,6 @@ flowchart LR
         %% กลุ่มที่ 4: โมดูลบริหารจัดการระบบ
         subgraph GroupAdmin ["4. การดูแลระบบและข้อมูลหลัก (ผู้ดูแลระบบ)"]
             UC_Dashboard(["ตรวจสอบแดชบอร์ดภาพรวมระบบ<br/>(System Overview Dashboard)"])
-            UC_ManageUsers(["จัดการข้อมูลผู้ใช้งานและบทบาท<br/>(Manage Users & Roles)"])
             UC_ManageLeaveTypes(["จัดการประเภทการลาและวันลาสูงสุด<br/>(Manage Leave Types)"])
             UC_ManageGroups(["จัดการแผนก/ฝ่ายสังกัด<br/>(Manage Groups/Depts)"])
         end
@@ -56,24 +55,21 @@ flowchart LR
 
     %% ความสัมพันธ์: Actor -> Use Cases
     Employee --- UC_Login
-    Employee --- UC_Profile
     Employee --- UC_Logout
     Employee --- UC_CreateLeave
     Employee --- UC_ViewHistory
+    Employee --- UC_EditLeave
     Employee --- UC_CancelLeave
 
     Manager --- UC_Login
-    Manager --- UC_Profile
     Manager --- UC_Logout
     Manager --- UC_ReviewLeave
     Manager --- UC_ApproveLeave
     Manager --- UC_RejectLeave
 
     Admin --- UC_Login
-    Admin --- UC_Profile
     Admin --- UC_Logout
     Admin --- UC_Dashboard
-    Admin --- UC_ManageUsers
     Admin --- UC_ManageLeaveTypes
     Admin --- UC_ManageGroups
     Admin --- UC_ApproveLeave
@@ -90,7 +86,7 @@ flowchart LR
     classDef incExtStyle fill:#fefce8,stroke:#ca8a04,stroke-width:1.5px,stroke-dasharray: 4 4,color:#854d0e;
 
     class Employee,Manager,Admin actorStyle;
-    class UC_Login,UC_Profile,UC_Logout,UC_CreateLeave,UC_ViewHistory,UC_CancelLeave,UC_ReviewLeave,UC_ApproveLeave,UC_RejectLeave,UC_Dashboard,UC_ManageUsers,UC_ManageLeaveTypes,UC_ManageGroups usecaseStyle;
+    class UC_Login,UC_Logout,UC_CreateLeave,UC_ViewHistory,UC_EditLeave,UC_CancelLeave,UC_ReviewLeave,UC_ApproveLeave,UC_RejectLeave,UC_Dashboard,UC_ManageLeaveTypes,UC_ManageGroups usecaseStyle;
     class UC_VerifyRole,UC_UploadDoc,UC_InspectDoc,UC_RejectReason incExtStyle;
 ```
 
@@ -101,9 +97,9 @@ flowchart LR
 ### 2.1 นิยามผู้ใช้งาน (Actors Definition)
 | Actor | บทบาทในระบบ | สิทธิ์และหน้าที่หลัก |
 | :--- | :--- | :--- |
-| **ผู้ใช้งานระดับ 1 (พนักงานทั่วไป / Employee)** | พนักงานผู้ปฏิบัติงาน | ยื่นใบลาใหม่, ติดตามสถานะคำขอลา, ตรวจสอบประวัติการลา, ยกเลิกใบลาที่รออนุมัติ, จัดการโปรไฟล์ตนเอง |
+| **ผู้ใช้งานระดับ 1 (พนักงานทั่วไป / Employee)** | พนักงานผู้ปฏิบัติงาน | ยื่นใบลาใหม่, ติดตามสถานะคำขอลา, ตรวจสอบประวัติการลา, แก้ไขใบลาที่รออนุมัติ, ยกเลิกใบลาที่รออนุมัติ |
 | **ผู้ใช้งานระดับ 2 (ผู้จัดการฝ่าย / Manager)** | หัวหน้างาน / ผู้มีอำนาจอนุมัติ | ตรวจสอบรายการคำขอลาของพนักงาน, ตรวจสอบเอกสารแนบ, พิจารณาอนุมัติหรือปฏิเสธพร้อมระบุเหตุผล |
-| **ผู้ดูแลระบบ (Admin)** | ผู้ดูแลระบบสารสนเทศ | จัดการบัญชีผู้ใช้และกำหนดสิทธิ์, จัดการประเภทการลาและโควตาวันลา, จัดการแผนก, ดูแลภาพรวมและพิจารณาคำขอลา |
+| **ผู้ดูแลระบบ (Admin)** | ผู้ดูแลระบบสารสนเทศ | จัดการประเภทการลาและโควตาวันลา, จัดการแผนก, ดูแลภาพรวมและพิจารณาคำขอลา |
 
 ---
 
@@ -112,11 +108,11 @@ flowchart LR
 | :--- | :--- | :--- | :--- | :--- |
 | **UC01** | เข้าสู่ระบบ (Login) | ทุก Actor | `<<include>>` UC02 | เข้าใช้งานระบบด้วยอีเมลและรหัสผ่าน |
 | **UC02** | ตรวจสอบความถูกต้องและแยกสิทธิ์ (Verify & RBAC) | ระบบ (System) | Included ใน UC01 | ตรวจสอบข้อมูลในฐานข้อมูลและนำทางไปยังหน้าตามบทบาท |
-| **UC03** | จัดการโปรไฟล์ส่วนตัว (Manage Profile) | ทุก Actor | - | ดูข้อมูลส่วนตัว แก้ไขรหัสผ่าน และอัปโหลดภาพประจำตัว |
-| **UC04** | ออกจากระบบ (Logout) | ทุก Actor | - | ล้างเซสชันการเข้าใช้งานและกลับสู่หน้า Login |
-| **UC05** | ยื่นคำขอลาใหม่ (Submit Leave Request) | Employee | Extended โดย UC06 | กรอกแบบฟอร์มเลือกประเภทลา ระบุช่วงเวลา และเหตุผล |
-| **UC06** | แนบเอกสารหลักฐาน (Attach Supporting Doc) | Employee | `<<extend>>` ไปยัง UC05 | อัปโหลดไฟล์ภาพหรือ PDF ประกอบการลา เช่น ใบรับรองแพทย์ |
-| **UC07** | ตรวจสอบประวัติและสถานะการลา (View History) | Employee | - | ดูรายการใบลาของตนเอง พร้อมสถานะ Pending, Approved, Rejected |
+| **UC03** | ออกจากระบบ (Logout) | ทุก Actor | - | ล้างเซสชันการเข้าใช้งานและกลับสู่หน้า Login |
+| **UC04** | ยื่นคำขอลาใหม่ (Submit Leave Request) | Employee | Extended โดย UC05 | กรอกแบบฟอร์มเลือกประเภทลา ระบุช่วงเวลา และเหตุผล |
+| **UC05** | แนบเอกสารหลักฐาน (Attach Supporting Doc) | Employee | `<<extend>>` ไปยัง UC04 | อัปโหลดไฟล์ภาพหรือ PDF ประกอบการลา เช่น ใบรับรองแพทย์ |
+| **UC06** | ตรวจสอบประวัติและสถานะการลา (View History) | Employee | - | ดูรายการใบลาของตนเอง พร้อมสถานะ Pending, Approved, Rejected |
+| **UC07** | แก้ไขคำขอลาที่รออนุมัติ (Edit Pending Leave) | Employee | - | ปรับปรุงข้อมูลคำขอลา วันที่ เหตุผล หรือเอกสารแนบ (เฉพาะสถานะ Pending) |
 | **UC08** | ยกเลิกคำขอลาที่รออนุมัติ (Cancel Pending Leave) | Employee | - | ขอยกเลิกคำขอลาที่ยังไม่ผ่านการพิจารณาจากหัวหน้า |
 | **UC09** | เรียกดูและค้นหาคำขอลา (Review Leave Requests) | Manager, Admin | Extended โดย UC10 | ดูรายการคำขอลาทั้งหมด กรองตามสถานะ และค้นหาตามชื่อ |
 | **UC10** | ตรวจสอบเอกสารแนบ (Inspect Attachment) | Manager, Admin | `<<extend>>` ไปยัง UC09 | เปิดดูหรือดาวน์โหลดเอกสารหลักฐานของพนักงาน |
@@ -124,6 +120,5 @@ flowchart LR
 | **UC12** | ปฏิเสธคำขอลา (Reject Leave Request) | Manager, Admin | `<<include>>` UC13 | ปรับเปลี่ยนสถานะคำขอลาเป็นปฏิเสธคำขอ |
 | **UC13** | ระบุเหตุผลในการปฏิเสธ (Specify Rejection Reason) | Manager, Admin | Included ใน UC12 | บังคับระบุข้อความเหตุผลให้พนักงานทราบเมื่อไม่อนุมัติ |
 | **UC14** | ตรวจสอบแดชบอร์ดภาพรวม (System Dashboard) | Admin | - | ดูสถิติและสถานะคำขอลาทั้งหมดของทุกแผนกในองค์กร |
-| **UC15** | จัดการผู้ใช้งานและสิทธิ์ (Manage Users & Roles) | Admin | - | เพิ่ม ลบ แก้ไขข้อมูลผู้ใช้ และกำหนดบทบาทสิทธิ์การเข้าถึง |
-| **UC16** | จัดการประเภทการลา (Manage Leave Types) | Admin | - | เพิ่ม ลบ แก้ไขชื่อประเภทการลา และกำหนดเพดานวันลาสูงสุด |
-| **UC17** | จัดการแผนก/ฝ่าย (Manage Groups) | Admin | - | เพิ่ม ลบ แก้ไขข้อมูลโครงสร้างแผนกในองค์กร |
+| **UC15** | จัดการประเภทการลา (Manage Leave Types) | Admin | - | เพิ่ม ลบ แก้ไขชื่อประเภทการลา และกำหนดเพดานวันลาสูงสุด |
+| **UC16** | จัดการแผนก/ฝ่าย (Manage Groups) | Admin | - | เพิ่ม ลบ แก้ไขข้อมูลโครงสร้างแผนกในองค์กร |

@@ -35,7 +35,8 @@ const handleLogin = handleSubmit(async (value) => {
     else if (role === 'manager') router.push('/manager')
     else router.push('/user')
   } catch (error) {
-    toastStore.add(error.response?.data.message)
+    // Error Handling แสดงแจ้งเตือน Toast สีแดงผ่าน Axios Interceptor อัตโนมัติแล้ว
+    console.error('Login error:', error)
   }
 })
 </script>
