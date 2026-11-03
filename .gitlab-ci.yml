@@ -1,0 +1,102 @@
+stages:
+  - test
+  - build
+  - push
+  - deploy
+
+variables:
+  PRODUCTION_IP: "192.168.10.30"
+  PRODUCTION_USER: "root"
+  REGISTRY_HOST: "registry.itcvc.com"
+  IMAGE_BACKEND: "registry.itcvc.com/administrator/backend"
+  IMAGE_FRONTEND: "registry.itcvc.com/administrator/frontend"
+  GIT_SSL_NO_VERIFY: "true"
+
+# ==========================================
+# STAGE 1: TEST (ตรวจสอบการติดตั้งและการคอมไพล์)
+# ==========================================
+test_backend:
+  stage: test
+  image: node:22-alpine
+  tags:
+    - docker
+  script:
+    - echo "Testing Backend..."
+    - cd backend
+    - npm install
+    - node -c index.js
+
+test_frontend:
+  stage: test
+  image: node:22-alpine
+  tags:
+    - docker
+  script:
+    - echo "Testing & Building Frontend..."
+    - cd frontend
+    - npm install
+    - npm run build
+
+# ==========================================
+# STAGE 2: BUILD (สร้าง Docker Images)
+# ==========================================
+build_images:
+  stage: build
+  image: docker:latest
+  tags:
+    - docker
+  before_script:
+    - docker system prune -af --volumes || true
+  script:
+    - echo "Building Backend Image..."
+    - docker build -t $IMAGE_BACKEND:latest ./backend
+
+    - echo "Building Frontend Image..."
+    - docker build -t $IMAGE_FRONTEND:latest ./frontend
+
+# ==========================================
+# STAGE 3: PUSH (ส่ง Images ไปยัง Registry)
+# ==========================================
+push_images:
+  stage: push
+  image: docker:latest
+  tags:
+    - docker
+  script:
+    - echo "Logging into Container Registry..."
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $REGISTRY_HOST
+
+    - echo "Pushing Backend Image..."
+    - docker push $IMAGE_BACKEND:latest
+
+    - echo "Pushing Frontend Image..."
+    - docker push $IMAGE_FRONTEND:latest
+
+# ==========================================
+# STAGE 4: DEPLOY (Deploy ไปยัง Production VM)
+# ==========================================
+deploy_to_production:
+  stage: deploy
+  image: alpine:latest
+  tags:
+    - docker
+  before_script:
+    - apk add --no-cache openssh-client
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - ssh-keyscan -H $PRODUCTION_IP >> ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to Production Server ($PRODUCTION_IP)..."
+    # 1. ส่งไฟล์ Docker Compose และ SQL เริ่มต้นไปยังเซิร์ฟเวอร์
+    - scp -i ~/.ssh/id_ed25519 docker-compose.yaml $PRODUCTION_USER@$PRODUCTION_IP:/root/docker-compose.yaml
+    - scp -i ~/.ssh/id_ed25519 ELeave.sql $PRODUCTION_USER@$PRODUCTION_IP:/root/ELeave.sql
+
+    # 2. เข้าเซิร์ฟเวอร์ผ่าน SSH เพื่อ Login Registry และสั่ง Compose อัปเดตบริการ
+    - |
+      ssh -i ~/.ssh/id_ed25519 $PRODUCTION_USER@$PRODUCTION_IP "
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $REGISTRY_HOST &&
+        cd /root &&
+        docker compose pull &&
+        docker compose up -d --force-recreate
+      "

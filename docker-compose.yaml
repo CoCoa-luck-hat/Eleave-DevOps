@@ -1,0 +1,87 @@
+services:
+
+  db:
+    image: mysql:latest
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ELeave
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 1234
+      TZ: Asia/Bangkok
+    ports:
+      - "3340:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./ELeave.sql:/docker-entrypoint-initdb.d/ELeave.sql
+    networks:
+      - eleave_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "8040:80"
+    networks:
+      - eleave_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: registry.itcvc.com/administrator/backend:latest
+    container_name: backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      NODE_ENV: production
+      TOKEN_KEY: CVCNAJA
+      DB_HOST: db
+      DB_NAME: ELeave
+      DB_USERNAME: user
+      DB_PASSWORD: 1234
+      DB_PORT: 3306
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - eleave_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: registry.itcvc.com/administrator/frontend:latest
+    container_name: frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - eleave_network
+
+networks:
+  eleave_network:
+    name: mysql_phpmyadmin
+    driver: bridge
+
+volumes:
+  mysql_data:
+  backend_uploads:
